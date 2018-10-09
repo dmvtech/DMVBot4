@@ -15,7 +15,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
-    "Bot_Builder_Echo_Bot_V4": {
+    "DMVBot4": {
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {

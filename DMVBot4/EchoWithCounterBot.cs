@@ -7,7 +7,10 @@ using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Logging;
 
-namespace Bot_Builder_Echo_Bot_V4
+using Microsoft.Bot.Builder.AI.Luis;
+
+
+namespace DMVBot4
 {
     /// <summary>
     /// Represents a bot that processes incoming activities.
@@ -78,11 +81,58 @@ namespace Bot_Builder_Echo_Bot_V4
                 // Echo back to the user whatever they typed.
                 var responseMessage = $"Turn {state.TurnCount}: You sent '{turnContext.Activity.Text}'\n";
                 await turnContext.SendActivityAsync(responseMessage);
+
+
+                // Call LUIS recognizer
+                var result = this.Recognizer.RecognizeAsync(turnContext, System.Threading.CancellationToken.None);
+
+                //var topIntent = result?.GetTopScoringIntent();
+
+                var topIntent = result?.Result.GetTopScoringIntent();
+
+                switch ((topIntent != null) ? topIntent.Value.intent : null)
+                {
+                    case null:
+                        await turnContext.SendActivityAsync("Failed to get results from LUIS.");
+                        break;
+                    case "None":
+                        await turnContext.SendActivityAsync("Sorry, I don't understand.");
+                        break;
+                    case "Help":
+                        await turnContext.SendActivityAsync("<here's some help>");
+                        break;
+                    case "Cancel":
+                        // Cancel the process.
+                        await turnContext.SendActivityAsync("<cancelling the process>");
+                        break;
+                    case "Weather":
+                        // Report the weather.
+                        await turnContext.SendActivityAsync("The weather today is sunny.");
+                        break;
+                    default:
+                        // Received an intent we didn't expect, so send its name and score.
+                        await turnContext.SendActivityAsync($"Intent: {topIntent.Value.intent} ({topIntent.Value.score}).");
+                        break;
+                }
+
             }
             else
             {
                 await turnContext.SendActivityAsync($"{turnContext.Activity.Type} event detected");
             }
+        }
+
+        /// <summary>
+        /// Gets the LUIS recognizer.
+        /// </summary>
+        private LuisRecognizer Recognizer { get; } = null;
+
+        public EchoWithCounterBot(ConversationState state, LuisRecognizer luis)
+        {
+            //EchoStateAccessor = state.CreateProperty<EchoState>("EchoBot.EchoState");
+
+            // The incoming luis variable is the LUIS Recognizer we added above.
+            this.Recognizer = luis ?? throw new System.ArgumentNullException(nameof(luis));
         }
     }
 }

@@ -15,7 +15,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Bot_Builder_Echo_Bot_V4
+using Microsoft.Bot.Builder.AI.Luis;
+
+namespace DMVBot4
 {
     /// <summary>
     /// The Startup class configures services and the request pipeline.
@@ -136,6 +138,28 @@ namespace Bot_Builder_Echo_Bot_V4
                 };
 
                 return accessors;
+            });
+
+            // Create and register a LUIS recognizer.
+            services.AddSingleton(sp =>
+            {
+                // Get LUIS information from appsettings.json.
+                var section = this.Configuration.GetSection("Luis");
+                var luisApp = new LuisApplication(
+                    applicationId: section["fde331b3-648b-4190-beca-ae31ffd294fa"],
+                    endpointKey: section["191c62851e6d428b852cd876e7110cd8"],
+                    endpoint: section["Region"]); //might need to be "westus" ?
+
+                // Specify LUIS options. These may vary for your bot.
+                var luisPredictionOptions = new LuisPredictionOptions
+                {
+                    IncludeAllIntents = true,
+                };
+
+                return new LuisRecognizer(
+                    application: luisApp,
+                    predictionOptions: luisPredictionOptions,
+                    includeApiResults: true);
             });
         }
 
